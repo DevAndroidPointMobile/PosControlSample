@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">POS API Demo</string>
+    <string name="nav_cash_drawer">Cash Drawer</string>
+    <string name="nav_second_display">Second Display</string>
+    <string name="nav_vid">USB VID</string>
+    <string name="cash_title">Cash Drawer</string>
+    <string name="cash_open">Open</string>
+    <string name="cash_get_status">Get Status</string>
+    <string name="cash_status_placeholder">Status: (unknown)</string>
+    <string name="cash_invert">Invert status (PS32 mode)</string>
+    <string name="vid_title">USB VID Allow List</string>
+    <string name="vid_enable">Enable allow list</string>
+    <string name="vid_hint">Enter VID (e.g., 046D or 0x046D)</string>
+    <string name="vid_add">Add</string>
+    <string name="vid_apply">Apply</string>
+    <string name="vid_clear">Clear</string>
+    <string name="vid_delete">Delete</string>
+    <string name="second_title">Second Display</string>
+    <string name="second_touch_switch">Enable touch for 2nd display</string>
+    <string name="second_refresh">Refresh</string>
+    <string name="second_status_placeholder">Status: (unknown)</string>
+</resources>
