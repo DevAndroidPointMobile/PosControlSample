@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">POS API Demo</string>
+    <string name="app_name">PosControlSample</string>
     <string name="nav_cash_drawer">Cash Drawer</string>
     <string name="nav_second_display">Second Display</string>
     <string name="nav_vid">USB VID</string>

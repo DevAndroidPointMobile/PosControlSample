@@ -25,9 +25,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Locale;
-import java.util.Set;
 
 import ex.dev.sample.pos.control.R;
 import ex.dev.sample.pos.control.data.ApiDataSource;
@@ -215,6 +214,7 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
                 dataSource.clearAllowList();
                 dataSource.reboot(); // reboot after clear
                 showToast("Cleared on device (empty list), rebooting...");
+
             } else {
                 // set
                 String[] arr = vidList.toArray(new String[0]);
@@ -297,27 +297,18 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
         try {
             String[] arr = dataSource.getAllowList();
             vidList.clear();
-            if (arr != null && arr.length > 0) {
-                Set<String> seenKeys = new HashSet<>();
-                for (String s : arr) {
-                    String n = normalizeVid(s);
-                    if (!TextUtils.isEmpty(n)) {
-                        String key = vidKey(n);
-                        if (seenKeys.add(key)) {
-                            vidList.add(n);
-                        }
-                    }
-                }
-            }
+            Collections.addAll(vidList, arr);
             adapter.notifyDataSetChanged();
             Log.d(TAG, "loaded: " + Arrays.toString(vidList.toArray()));
-        } catch (Throwable t) {
+
+        } catch (
+                Throwable t) {
             Log.e(TAG, "loadList error", t);
             showToast("Load list failed: " + t.getMessage());
         }
     }
 
-    // -------------------- validation / helpers --------------------
+// -------------------- validation / helpers --------------------
 
     /**
      * Normalize user input: trim, uppercase, keep 0x prefix if provided
@@ -325,23 +316,22 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
     @Nullable
     private String normalizeVid(@Nullable String input) {
         if (input == null) return null;
-        String s = input.trim().replace(" ", "");
+
+        String s = input.trim();
         if (s.isEmpty()) return null;
 
-        boolean has0x = s.startsWith("0x") || s.startsWith("0X");
-        String hex = has0x ? s.substring(2) : s;
-
-        // Must be 4 or 6 hex chars
-        if (hex.length() != 4 && hex.length() != 6) return null;
-        for (int i = 0; i < hex.length(); i++) {
-            char c = hex.charAt(i);
-            boolean isHex = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
-            if (!isHex) return null;
+        if (!s.matches("^(0[xX])?[0-9A-Fa-f]+$")) {
+            return null;
         }
 
-        String hexUp = hex.toUpperCase(Locale.US);
-        return has0x ? "0x" + hexUp : hexUp;
+        if (s.startsWith("0x") || s.startsWith("0X")) {
+            return "0x" + s.substring(2).toUpperCase(Locale.US);
+        } else {
+            return s.toUpperCase(Locale.US);
+        }
     }
+
+
 
     /**
      * Generate canonical key (without prefix) for dedupe checks
@@ -383,7 +373,7 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
-    // -------------------- VidAdapter callback --------------------
+// -------------------- VidAdapter callback --------------------
 
     /**
      * Called when delete button in list is pressed
