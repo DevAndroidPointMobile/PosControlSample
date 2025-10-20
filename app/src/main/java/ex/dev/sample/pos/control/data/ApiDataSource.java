@@ -123,6 +123,28 @@ public class ApiDataSource {
     // --------------------------------------------------------------------------
 
     /**
+     * Popup USB Access notification according to Vid alllow list
+     *
+     * @return isEnabled
+     */
+    public boolean isVidBlockNotificationEnabled() {
+        return manager.isVidBlockNotificationEnabled();
+    }
+
+    /**
+     * Set USB Access notification according to Vid alllow list
+     *
+     * @param isEnabled enable/disable notification
+     */
+    public void setVidBlockNotificationEnabled(boolean isEnabled) {
+        manager.setVidBlockNotificationEnabled(isEnabled);
+    }
+
+    // --------------------------------------------------------------------------
+    // Utility
+    // --------------------------------------------------------------------------
+
+    /**
      * Explicit reboot for callers that need it.
      *
      * <p>Important:</p>
