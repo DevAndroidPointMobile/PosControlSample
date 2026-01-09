@@ -69,7 +69,6 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
 
     // -------------------- views --------------------
     private SwitchCompat vidEnabled;    // switch to enable / disable vid allow list
-    private SwitchCompat notiEnabled;   // switch to enable / disable usb access notification
     private EditText etVid;          // input field for VID
     private Button btnAdd;           // add VID to list
     private Button btnApply;         // apply VID list to device
@@ -125,7 +124,6 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
      */
     private void initViews() {
         vidEnabled = findViewById(R.id.sw_enable);
-        notiEnabled = findViewById(R.id.noti_enable);
         etVid = findViewById(R.id.et_vid);
         btnAdd = findViewById(R.id.btn_add);
         btnApply = findViewById(R.id.btn_apply);
@@ -139,7 +137,6 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
     private void bindInteractions() {
         // Toggle allow list enable/disable
         vidEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> onVidEnabled(isChecked));
-        notiEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> onVidEnabled(isChecked));
 
         // Add button
         btnAdd.setOnClickListener(v -> addFromInput());
@@ -198,34 +195,6 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
             vidEnabled.setOnCheckedChangeListener((b, st) -> {
                 try {
                     dataSource.setAllowListEnabled(st);
-                } catch (Throwable ignore) {
-                }
-            });
-            Log.e(TAG, "setAllowListEnabled error", t);
-            showToast("Toggle failed: " + t.getMessage());
-        }
-    }
-
-    /**
-     * @param isChecked
-     */
-    private void onNotiEnabled(boolean isChecked) {
-        try {
-            dataSource.setVidBlockNotificationEnabled(isChecked);
-            if (isChecked) {
-                dataSource.reboot(); // reboot only when enabling
-                showToast("Allow List: ON (rebooting to apply)");
-            } else {
-                showToast("Allow List: OFF");
-            }
-
-        } catch (Throwable t) {
-            // rollback on failure
-            notiEnabled.setOnCheckedChangeListener(null);
-            notiEnabled.setChecked(!isChecked);
-            notiEnabled.setOnCheckedChangeListener((b, st) -> {
-                try {
-                    dataSource.setVidBlockNotificationEnabled(st);
                 } catch (Throwable ignore) {
                 }
             });
@@ -313,11 +282,6 @@ public class VidAllowListActivity extends AppCompatActivity implements VidAllowL
             vidEnabled.setOnCheckedChangeListener(null);
             vidEnabled.setChecked(isVidEnabled);
             vidEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> onVidEnabled(isChecked));
-
-            boolean isNotiEnabled = dataSource.isVidBlockNotificationEnabled();
-            notiEnabled.setOnCheckedChangeListener(null);
-            notiEnabled.setChecked(isNotiEnabled);
-            notiEnabled.setOnCheckedChangeListener((buttonView, isChecked) -> onNotiEnabled(isChecked));
 
         } catch (Throwable t) {
             Log.e(TAG, "loadEnabled error", t);

@@ -10,7 +10,7 @@
     <string name="cash_invert">Invert status (PS32 mode)</string>
     <string name="vid_title">USB VID Allow List</string>
     <string name="vid_enable">Enable allow list</string>
-    <string name="noti_enable">USB access notification</string>
+    <string name="noti_enable">Vid blocked broadcast</string>
     <string name="vid_hint">Enter VID (e.g., 046D or 0x046D)</string>
     <string name="vid_add">Add</string>
     <string name="vid_apply">Apply</string>
