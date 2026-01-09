@@ -10,6 +10,9 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import ex.dev.sample.pos.control.R;
 import ex.dev.sample.pos.control.data.ApiDataSource;
@@ -46,6 +49,12 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
 
         // Fetch initial state from API
         loadState();
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_second_display), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
     }
 
     // -------------------- init / bind --------------------

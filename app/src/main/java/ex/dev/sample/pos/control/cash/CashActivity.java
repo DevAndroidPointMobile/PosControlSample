@@ -8,6 +8,9 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import ex.dev.sample.pos.control.R;
 import ex.dev.sample.pos.control.data.ApiDataSource;
@@ -52,6 +55,12 @@ public class CashActivity extends AppCompatActivity {
 
         // Fetch initial status from API
         initializeStatusFromApi();
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_cash), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
     }
 
     // -------------------- init / bind --------------------
