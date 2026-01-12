@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PosControlSample">
         <activity
+            android:name=".serial.SerialActivity"
+            android:exported="false" />
+        <activity
             android:name=".vid.VidAllowListActivity"
             android:exported="false" />
         <activity

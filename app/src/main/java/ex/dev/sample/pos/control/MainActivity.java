@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import ex.dev.sample.pos.control.cash.CashActivity;
 import ex.dev.sample.pos.control.display.SecondDisplayControlActivity;
+import ex.dev.sample.pos.control.serial.SerialActivity;
 import ex.dev.sample.pos.control.vid.VidAllowListActivity;
 
 /**
@@ -38,6 +39,11 @@ public class MainActivity extends AppCompatActivity {
         // Navigate to VidActivity
         findViewById(R.id.btn_vid).setOnClickListener(
                 v -> startActivity(new Intent(this, VidAllowListActivity.class))
+        );
+
+        // Navigate to SerialActivity
+        findViewById(R.id.btn_serial).setOnClickListener(
+                v -> startActivity(new Intent(this, SerialActivity.class))
         );
     }
 }
