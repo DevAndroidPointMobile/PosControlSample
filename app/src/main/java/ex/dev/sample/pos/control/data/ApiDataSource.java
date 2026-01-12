@@ -21,6 +21,10 @@ import device.sdk.PosManager;
  */
 public class ApiDataSource {
 
+    public static final String PORT_1 = "local:1";
+    public static final String PORT_2 = "local:2";
+    public static final String PORT_3 = "local:3";
+
     private static final String TAG = "ApiDataSource";
 
     private static final PosManager manager = PosManager.get();
@@ -99,7 +103,7 @@ public class ApiDataSource {
     }
 
     // --------------------------------------------------------------------------
-    // Second display API
+    // 2nd display API
     // --------------------------------------------------------------------------
 
     /**
@@ -116,6 +120,14 @@ public class ApiDataSource {
      */
     public void set2ndMonitorTouchEnabled(boolean isEnabled) {
         manager.set2ndDisplayTouchEnabled(isEnabled);
+    }
+
+    // --------------------------------------------------------------------------
+    //  Display Unique ID
+    // --------------------------------------------------------------------------
+
+    public String getDisplayUniqueId(int displayId) {
+        return manager.getDisplayUniqueId(displayId);
     }
 
 

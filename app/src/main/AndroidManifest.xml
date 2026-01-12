@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PosControlSample">
         <activity
+            android:name=".multi.MultiDisplayActivity"
+            android:exported="false" />
+        <activity
             android:name=".serial.SerialActivity"
             android:exported="false" />
         <activity

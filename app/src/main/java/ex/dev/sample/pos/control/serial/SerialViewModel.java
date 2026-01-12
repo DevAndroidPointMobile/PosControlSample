@@ -14,15 +14,26 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * SerialViewModel
+ * <p>
+ * Handles all serial port operations and exposes UI-friendly state.
+ * <p>
+ * Responsibilities:
+ * - Open / close serial ports
+ * - Write test data
+ * - Continuously read incoming data
+ * - Publish immutable UI state updates
+ */
 public class SerialViewModel extends ViewModel {
 
-    private static final String TAG = "MainViewModel";
+    private static final String TAG = "SerialViewModel";
 
-    /* ============================
-     * UI STATE
-     * ============================ */
-    private final MutableLiveData<PortUiState> com1State = new MutableLiveData<>(new PortUiState("COM1"));
-    private final MutableLiveData<PortUiState> com2State = new MutableLiveData<>(new PortUiState("COM2"));
+    // UI state for each port (observed by Activity)
+    private final MutableLiveData<PortUiState> com1State =
+            new MutableLiveData<>(new PortUiState("COM1"));
+    private final MutableLiveData<PortUiState> com2State =
+            new MutableLiveData<>(new PortUiState("COM2"));
 
     public LiveData<PortUiState> getCom1State() {
         return com1State;
@@ -32,39 +43,27 @@ public class SerialViewModel extends ViewModel {
         return com2State;
     }
 
-    /* ============================
-     * SERIAL CONFIG
-     * ============================ */
-    private static final int DATA_BITS_8 = 8;
+    // Serial configuration (8N1, 115200 baud)
     private static final int BAUDRATE = 115200;
-    private static final int FLAGS = DATA_BITS_8; // 8N1
+    private static final int FLAGS = 8;
 
-    /* ============================
-     * SERIAL PORT
-     * ============================ */
-    // LPOS / PS72
+    // Serial port device paths (LPOS, PS72)
 //    private final SerialPort com1Port = new SerialPort("/dev/ttyXRUSB0");
 //    private final SerialPort com2Port = new SerialPort("/dev/ttyXRUSB1");
 
-    /* ============================
-     * SERIAL PORT
-     * ============================ */
-    // PS32
+    // Serial port device paths (PS32)
     private final SerialPort com1Port = new SerialPort("/dev/ttyACM0");
     private final SerialPort com2Port = new SerialPort("/dev/ttyACM1");
 
-    /* ============================
-     * THREAD
-     * ============================ */
+    // Background thread pool for I/O
     private final ExecutorService ioExecutor =
             Executors.newFixedThreadPool(2);
 
+    // Flags controlling read loop lifetime
     private volatile boolean com1Reading = false;
     private volatile boolean com2Reading = false;
 
-    /* ============================
-     * TEST BUFFER
-     * ============================ */
+    // Test payload written to ports
     private final byte[] testBuffer = new byte[]{
             0x02, 0x02, 0x0B, 0x01, 0x0E, 0x01, 0x57, 0x00,
             0x14, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -73,16 +72,19 @@ public class SerialViewModel extends ViewModel {
             0x0F, 0x03
     };
 
-    /* ============================
-     * OPEN / CLOSE
-     * ============================ */
+    /**
+     * Open COM1 port and start read loop.
+     */
     public ActionResult openCom1Port() {
         try {
             if (!com1Port.isOpened()) {
                 com1Port.openPort(BAUDRATE, FLAGS, false);
             }
-            com1State.postValue(com1State.getValue()
-                    .copy(true, null, null, null));
+
+            com1State.postValue(
+                    com1State.getValue().copy(true, null, null, null)
+            );
+
             startCom1Reader();
             return ActionResult.ok("COM1 opened");
 
@@ -92,13 +94,19 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Open COM2 port and start read loop.
+     */
     public ActionResult openCom2Port() {
         try {
             if (!com2Port.isOpened()) {
                 com2Port.openPort(BAUDRATE, FLAGS, false);
             }
-            com2State.postValue(com2State.getValue()
-                    .copy(true, null, null, null));
+
+            com2State.postValue(
+                    com2State.getValue().copy(true, null, null, null)
+            );
+
             startCom2Reader();
             return ActionResult.ok("COM2 opened");
 
@@ -108,12 +116,16 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Close COM1 port and stop reading.
+     */
     public ActionResult clearCom1Port() {
         com1Reading = false;
         try {
             com1Port.clear();
-            com1State.postValue(com1State.getValue()
-                    .copy(false, null, null, null));
+            com1State.postValue(
+                    com1State.getValue().copy(false, null, null, null)
+            );
             return ActionResult.ok("COM1 closed");
 
         } catch (Throwable t) {
@@ -121,12 +133,16 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Close COM2 port and stop reading.
+     */
     public ActionResult clearCom2Port() {
         com2Reading = false;
         try {
             com2Port.clear();
-            com2State.postValue(com2State.getValue()
-                    .copy(false, null, null, null));
+            com2State.postValue(
+                    com2State.getValue().copy(false, null, null, null)
+            );
             return ActionResult.ok("COM2 closed");
 
         } catch (Throwable t) {
@@ -134,25 +150,31 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
-    /* ============================
-     * WRITE
-     * ============================ */
+    /**
+     * Write predefined test buffer to COM1.
+     */
     public ActionResult writeCom1Port() {
         return writeCom1Port(testBuffer);
     }
 
+    /**
+     * Write arbitrary data to COM1.
+     */
     public ActionResult writeCom1Port(byte[] buffer) {
         if (!com1Port.isOpened()) {
             return ActionResult.fail("COM1 not opened");
         }
+
         try {
             com1Port.write(buffer);
+
             PortUiState prev = com1State.getValue();
             com1State.postValue(
                     prev.copy(null, null,
                             prev.getSentCount() + buffer.length,
                             null)
             );
+
             return ActionResult.ok("COM1 write " + buffer.length + "B");
 
         } catch (Throwable t) {
@@ -160,22 +182,31 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Write predefined test buffer to COM2.
+     */
     public ActionResult writeCom2Port() {
         return writeCom2Port(testBuffer);
     }
 
+    /**
+     * Write arbitrary data to COM2.
+     */
     public ActionResult writeCom2Port(byte[] buffer) {
         if (!com2Port.isOpened()) {
             return ActionResult.fail("COM2 not opened");
         }
+
         try {
             com2Port.write(buffer);
+
             PortUiState prev = com2State.getValue();
             com2State.postValue(
                     prev.copy(null, null,
                             prev.getSentCount() + buffer.length,
                             null)
             );
+
             return ActionResult.ok("COM2 write " + buffer.length + "B");
 
         } catch (Throwable t) {
@@ -183,25 +214,33 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
-    /* ============================
-     * READ LOOP
-     * ============================ */
+    /**
+     * Start background read loop for COM1.
+     */
     private void startCom1Reader() {
         if (com1Reading) return;
         com1Reading = true;
 
-        ioExecutor.execute(() -> readLoop(
-                com1Port, com1State, () -> com1Reading));
+        ioExecutor.execute(() ->
+                readLoop(com1Port, com1State, () -> com1Reading)
+        );
     }
 
+    /**
+     * Start background read loop for COM2.
+     */
     private void startCom2Reader() {
         if (com2Reading) return;
         com2Reading = true;
 
-        ioExecutor.execute(() -> readLoop(
-                com2Port, com2State, () -> com2Reading));
+        ioExecutor.execute(() ->
+                readLoop(com2Port, com2State, () -> com2Reading)
+        );
     }
 
+    /**
+     * Continuous read loop with exponential backoff on error.
+     */
     private void readLoop(
             SerialPort port,
             MutableLiveData<PortUiState> stateLive,
@@ -231,9 +270,10 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
-    /* ============================
-     * PACKET UTIL
-     * ============================ */
+    /**
+     * Convert raw bytes into readable string.
+     * Chooses ASCII or HEX depending on content.
+     */
     private String formatPacket(byte[] buf, int len) {
         int printable = 0;
         for (int i = 0; i < len; i++) {
@@ -253,12 +293,16 @@ public class SerialViewModel extends ViewModel {
         }
     }
 
+    /**
+     * Append received packet to UI state (keeps last 200 entries).
+     */
     private void appendPacket(
             MutableLiveData<PortUiState> live,
             String packet,
             int len
     ) {
         PortUiState prev = live.getValue();
+
         List<String> list = new ArrayList<>();
         list.add(packet);
         list.addAll(prev.getPackets());
@@ -267,30 +311,29 @@ public class SerialViewModel extends ViewModel {
             list = list.subList(0, 200);
         }
 
-        live.postValue(prev.copy(
-                null,
-                list,
-                null,
-                prev.getRecvCount() + len
-        ));
+        live.postValue(
+                prev.copy(null, list, null,
+                        prev.getRecvCount() + len)
+        );
     }
 
-    /* ============================
-     * CLEANUP
-     * ============================ */
+    /**
+     * Clean up resources when ViewModel is destroyed.
+     */
     @Override
     protected void onCleared() {
-        super.onCleared();
         com1Reading = false;
         com2Reading = false;
+
         ioExecutor.shutdownNow();
+
         com1Port.clear();
         com2Port.clear();
     }
 
-    /* ============================
-     * INTERNAL
-     * ============================ */
+    /**
+     * Functional interface used to control read loop lifetime.
+     */
     private interface ReadingFlag {
         boolean isRunning();
     }

@@ -15,58 +15,81 @@ import androidx.core.view.WindowInsetsCompat;
 import ex.dev.sample.pos.control.R;
 import ex.dev.sample.pos.control.data.ApiDataSource;
 
-
 /**
- * Cash screen (Java + XML)
+ * CashActivity
+ * <p>
+ * This Activity demonstrates a simple POS cash drawer control flow.
+ * <p>
  * Responsibilities:
- * - Open: open cash drawer (does NOT change status text)
- * - Get Status: query API and update UI
- * - Initial state: fetch status from API on create
+ * 1. Open the cash drawer
+ * 2. Query the current open/close status
+ * 3. Display the status on screen
+ * 4. Prevent multiple simultaneous operations
+ * <p>
+ * Architecture notes:
+ * - UI logic is kept inside the Activity
+ * - Hardware/API calls are delegated to ApiDataSource
+ * - No background thread is used here (assumes fast / local API)
  */
 public class CashActivity extends AppCompatActivity {
 
-    // -------------------- constants --------------------
     private static final String TAG = "CashActivity";
 
-    // Status text strings for UI
+    /**
+     * UI display strings for drawer status
+     */
     private static final String STATUS_OPEN = "Status: OPEN";
     private static final String STATUS_CLOSE = "Status: CLOSE";
 
-    // -------------------- dependencies & state --------------------
-    // API data source (wrapper around SDK)
+    /**
+     * Abstraction layer for cash drawer hardware or system API
+     */
     private final ApiDataSource dataSource = new ApiDataSource();
 
-    // Prevents multiple actions at the same time
-    private boolean busy = false;
+    // UI elements
+    private Button btnOpen;
+    private Button btnGetStatus;
+    private TextView tvStatus;
 
-    // -------------------- views --------------------
-    private Button btnOpen;        // "Open" button
-    private Button btnGetStatus;   // "Get Status" button
-    private TextView tvStatus;     // TextView showing current status
-
-    // -------------------- lifecycle --------------------
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Inflate activity layout
         setContentView(R.layout.activity_cash);
 
+        // Initialize view references
         initViews();
+
+        // Attach click listeners
         bindInteractions();
 
-        // Fetch initial status from API
+        // Fetch initial cash drawer status from API
         initializeStatusFromApi();
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_cash), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        /*
+         * Handle system window insets (status bar / navigation bar)
+         * so the UI is not overlapped on modern edge-to-edge devices.
+         */
+        ViewCompat.setOnApplyWindowInsetsListener(
+                findViewById(R.id.root_cash),
+                (v, insets) -> {
+                    Insets systemBars =
+                            insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                    v.setPadding(
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom
+                    );
+                    return insets;
+                }
+        );
     }
 
-    // -------------------- init / bind --------------------
-
     /**
-     * Initialize view references
+     * Find and assign UI components from layout.
+     * This method should only contain findViewById calls.
      */
     private void initViews() {
         btnOpen = findViewById(R.id.btn_open_cash);
@@ -75,24 +98,30 @@ public class CashActivity extends AppCompatActivity {
     }
 
     /**
-     * Bind button click listeners
+     * Bind UI interactions (button click listeners).
+     * Keeps onCreate() clean and readable.
      */
     private void bindInteractions() {
         btnOpen.setOnClickListener(v -> onClickOpen());
         btnGetStatus.setOnClickListener(v -> refreshStatusFromApi());
     }
 
-    // -------------------- actions --------------------
-
     /**
-     * Called on activity start: fetch status from API and update UI
+     * Called once when the Activity starts.
+     * <p>
+     * Purpose:
+     * - Query the current cash drawer status
+     * - Update the UI accordingly
+     * <p>
+     * This ensures the UI reflects the real hardware state
+     * instead of assuming a default value.
      */
     private void initializeStatusFromApi() {
         setBusy(true);
         try {
             boolean raw = dataSource.isOpenedCashDrawer();
             updateStatusText(raw);
-            Log.d(TAG, "init status raw=" + raw);
+            Log.d(TAG, "initializeStatusFromApi: raw=" + raw);
         } catch (Throwable t) {
             Log.e(TAG, "initializeStatusFromApi error", t);
             showToast("Init status failed: " + t.getMessage());
@@ -102,7 +131,12 @@ public class CashActivity extends AppCompatActivity {
     }
 
     /**
-     * Called when "Get Status" button is pressed: refresh status from API
+     * Called when the "Get Status" button is pressed.
+     * <p>
+     * Purpose:
+     * - Re-query the cash drawer status from API
+     * - Update UI
+     * - Provide user feedback via Toast
      */
     private void refreshStatusFromApi() {
         setBusy(true);
@@ -110,7 +144,7 @@ public class CashActivity extends AppCompatActivity {
             boolean raw = dataSource.isOpenedCashDrawer();
             updateStatusText(raw);
             showToast(raw ? STATUS_OPEN : STATUS_CLOSE);
-            Log.d(TAG, "refresh status raw=" + raw);
+            Log.d(TAG, "refreshStatusFromApi: raw=" + raw);
         } catch (Throwable t) {
             Log.e(TAG, "refreshStatusFromApi error", t);
             showToast("Get Status: error - " + t.getMessage());
@@ -120,7 +154,15 @@ public class CashActivity extends AppCompatActivity {
     }
 
     /**
-     * Called when "Open" button is pressed: open cash drawer (no UI update)
+     * Called when the "Open" button is pressed.
+     * <p>
+     * Behavior:
+     * - Sends an open command to the cash drawer
+     * - Shows result via Toast
+     * <p>
+     * Design note:
+     * - This method intentionally does NOT update the status TextView
+     * - Status should always be fetched explicitly via API
      */
     private void onClickOpen() {
         setBusy(true);
@@ -128,7 +170,6 @@ public class CashActivity extends AppCompatActivity {
             boolean ok = dataSource.openCashDrawer();
             showToast(ok ? "Open: success" : "Open: failed");
             Log.d(TAG, "openCashDrawer -> " + ok);
-            // NOTE: does not update tvStatus by design
         } catch (Throwable t) {
             Log.e(TAG, "openCashDrawer error", t);
             showToast("Open: error - " + t.getMessage());
@@ -137,27 +178,36 @@ public class CashActivity extends AppCompatActivity {
         }
     }
 
-    // -------------------- helpers --------------------
-
     /**
-     * Update TextView with OPEN or CLOSE text
+     * Update the status TextView based on drawer state.
+     *
+     * @param isOpen true if drawer is open, false otherwise
      */
     private void updateStatusText(boolean isOpen) {
         tvStatus.setText(isOpen ? STATUS_OPEN : STATUS_CLOSE);
     }
 
     /**
-     * Enable/disable UI controls to prevent multiple actions
+     * Enable or disable UI controls depending on busy state.
+     * <p>
+     * When busy:
+     * - Buttons are disabled
+     * - Prevents multiple simultaneous hardware calls
      */
     private void setBusy(boolean newBusy) {
-        busy = newBusy;
-        boolean enabled = !busy;
+        /*
+         * Flag used to block UI interactions while an operation is in progress.
+         * This prevents:
+         * - Double clicks
+         * - Concurrent hardware calls
+         */
+        boolean enabled = !newBusy;
         btnOpen.setEnabled(enabled);
         btnGetStatus.setEnabled(enabled);
     }
 
     /**
-     * Show short toast message
+     * Display a short Toast message to the user.
      */
     private void showToast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();

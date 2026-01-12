@@ -71,9 +71,6 @@ public final class PortUiState {
         );
     }
 
-    // ───────────────
-    // equals / hashCode / toString
-    // ───────────────
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

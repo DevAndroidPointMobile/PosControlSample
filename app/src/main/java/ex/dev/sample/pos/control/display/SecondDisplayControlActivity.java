@@ -18,49 +18,78 @@ import ex.dev.sample.pos.control.R;
 import ex.dev.sample.pos.control.data.ApiDataSource;
 
 /**
- * Second Display screen
+ * SecondDisplayControlActivity
+ * <p>
+ * Controls touch input availability on the second (external) display.
+ * <p>
  * Responsibilities:
- * - Toggle 2nd display touch enable/disable
- * - Refresh current state from API
- * - Optimistic UI update with rollback on failure
+ * - Enable / disable touch input for the 2nd display
+ * - Fetch current state from API
+ * - Perform optimistic UI updates
+ * - Roll back UI state on failure
+ * <p>
+ * Typical use case:
+ * - POS systems where the customer display may need to be
+ * temporarily locked or unlocked.
  */
 public class SecondDisplayControlActivity extends AppCompatActivity {
 
-    // -------------------- constants --------------------
     private static final String TAG = "SecondDisplayControlActivity";
 
-    // -------------------- dependencies & state --------------------
+    /**
+     * Data source responsible for communicating with
+     * system / hardware / vendor APIs.
+     */
     private final ApiDataSource dataSource = new ApiDataSource();
+
+    /**
+     * Flag used to prevent multiple concurrent operations.
+     */
     private boolean isBusy = false;
 
-    // -------------------- views --------------------
-    private SwitchCompat swTouchEnabled;   // toggle for 2nd display touch
-    private Button btnRefresh;             // refresh button
-    private TextView tvStatus;             // status label
+    // UI components
+    private SwitchCompat swTouchEnabled;
+    private Button btnRefresh;
+    private TextView tvStatus;
 
-    // -------------------- lifecycle --------------------
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Inflate activity layout
         setContentView(R.layout.activity_second_display_control);
 
+        // Initialize UI references
         initViews();
+
+        // Bind user interactions
         bindInteractions();
 
-        // Fetch initial state from API
+        // Load initial state from API
         loadState();
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_second_display), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        /*
+         * Apply system window insets (status bar / navigation bar)
+         * to support edge-to-edge layouts.
+         */
+        ViewCompat.setOnApplyWindowInsetsListener(
+                findViewById(R.id.root_second_display),
+                (v, insets) -> {
+                    Insets systemBars =
+                            insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                    v.setPadding(
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom
+                    );
+                    return insets;
+                }
+        );
     }
 
-    // -------------------- init / bind --------------------
-
     /**
-     * Initialize view references
+     * Initialize all view references from XML layout.
      */
     private void initViews() {
         swTouchEnabled = findViewById(R.id.sw_touch_enabled);
@@ -69,27 +98,38 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
     }
 
     /**
-     * Bind button and switch listeners
+     * Bind UI interactions.
+     * <p>
+     * - Switch toggle → optimistic update
+     * - Refresh button → explicit state reload from API
      */
     private void bindInteractions() {
-        // Optimistic update on switch toggle
+
+        // Optimistic update when user toggles the switch
         swTouchEnabled.setOnCheckedChangeListener(this::onToggle);
 
-        // Refresh button explicitly re-queries API
+        // Explicit refresh from API (source of truth)
         btnRefresh.setOnClickListener(v -> loadState());
     }
 
-    // -------------------- actions --------------------
-
     /**
-     * Called when user toggles the switch
+     * Called when the user toggles the touch enable switch.
+     * <p>
+     * Behavior:
+     * - Immediately applies the change via API
+     * - Updates UI optimistically
+     * - Rolls back switch state if API call fails
      */
     private void onToggle(CompoundButton buttonView, boolean newChecked) {
         if (isBusy) return;
 
         try {
             setBusy(true);
+
+            // Apply new state to the system
             dataSource.set2ndMonitorTouchEnabled(newChecked);
+
+            // Optimistically update UI
             updateStatusText(newChecked);
             showToast("2nd Touch: " + (newChecked ? "ENABLED" : "DISABLED"));
 
@@ -97,6 +137,7 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
             Log.e(TAG, "set2ndMonitorTouchEnabled error", t);
             showToast("Failed to change: " + t.getMessage());
 
+            // Roll back UI to previous state
             rollbackSwitch(newChecked);
         } finally {
             setBusy(false);
@@ -104,20 +145,28 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
     }
 
     /**
-     * Load current state from API and update UI
+     * Loads the current touch enable state from API
+     * and updates the UI accordingly.
+     * <p>
+     * This method is the single source of truth.
      */
     private void loadState() {
         if (isBusy) return;
+
         setBusy(true);
         try {
             boolean enabled = dataSource.is2ndDisplayTouchEnabled();
 
-            // Avoid triggering listener while programmatically setting value
+            /*
+             * Temporarily remove the listener to avoid triggering
+             * onToggle() when updating the switch programmatically.
+             */
             swTouchEnabled.setOnCheckedChangeListener(null);
             swTouchEnabled.setChecked(enabled);
             swTouchEnabled.setOnCheckedChangeListener(this::onToggle);
 
             updateStatusText(enabled);
+
         } catch (Throwable t) {
             Log.e(TAG, "loadState error", t);
             showToast("Load failed: " + t.getMessage());
@@ -126,10 +175,9 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
         }
     }
 
-    // -------------------- helpers --------------------
-
     /**
-     * Roll back the switch state after a failed toggle
+     * Roll back the switch to the previous value
+     * after a failed API operation.
      */
     private void rollbackSwitch(boolean attemptedValue) {
         swTouchEnabled.setOnCheckedChangeListener(null);
@@ -138,14 +186,22 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
     }
 
     /**
-     * Update status label
+     * Update the status label based on current state.
      */
     private void updateStatusText(boolean enabled) {
-        tvStatus.setText(enabled ? "Status: TOUCH ENABLED" : "Status: TOUCH DISABLED");
+        tvStatus.setText(
+                enabled
+                        ? "Status: TOUCH ENABLED"
+                        : "Status: TOUCH DISABLED"
+        );
     }
 
     /**
-     * Set busy state and disable controls during operations
+     * Enable or disable UI controls based on busy state.
+     * <p>
+     * When busy:
+     * - Switch and button are disabled
+     * - Prevents concurrent API calls
      */
     private void setBusy(boolean newBusy) {
         isBusy = newBusy;
@@ -155,7 +211,7 @@ public class SecondDisplayControlActivity extends AppCompatActivity {
     }
 
     /**
-     * Show a short toast
+     * Display a short Toast message.
      */
     private void showToast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
