@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="4dp"
-    android:id="@+id/root"
     android:elevation="4dp">
 
     <LinearLayout
@@ -25,8 +25,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Status" />
+            android:text="Status"
+            android:textSize="12sp" />
 
+        <!-- First row: OPEN, CLOSE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -37,6 +39,7 @@
                 android:id="@+id/btnOpen"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:text="OPEN" />
 
@@ -44,15 +47,42 @@
                 android:id="@+id/btnClose"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:text="CLOSE" />
+        </LinearLayout>
+
+        <!-- Second row: START, STOP, CLEAR -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
 
             <Button
-                android:id="@+id/btnWrite"
+                android:id="@+id/btnStart"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="2dp"
                 android:layout_weight="1"
-                android:text="WRITE" />
+                android:text="START" />
+
+            <Button
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:layout_weight="1"
+                android:text="STOP" />
+
+            <Button
+                android:id="@+id/btnClear"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_weight="1"
+                android:text="CLEAR" />
         </LinearLayout>
 
         <View
@@ -68,5 +98,4 @@
             android:layout_weight="1" />
 
     </LinearLayout>
-
 </androidx.cardview.widget.CardView>
